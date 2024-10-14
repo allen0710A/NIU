@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>動態商品清單與交易明細</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .product {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>動態商品清單與交易明細</h1>
+    <div id="productList"></div>
+    <div>
+        <input type="text" id="productName" placeholder="商品名稱">
+        <input type="number" id="productPrice" placeholder="價格">
+        <input type="file" id="productImage" accept="image/*">
+        <button onclick="addProduct()">新增商品</button>
+    </div>
+    <p id="transaction"></p>
+    <script>
+        // 載入本地存儲的商品列表
+        window.onload = function() {
+            loadProducts();
+        }
+
+        function addProduct() {
+            const productName = document.getElementById('productName').value;
+            const productPrice = parseFloat(document.getElementById('productPrice').value);
+            const productImageFile = document.getElementById('productImage').files[0];
+
+            if (productName && productPrice && productImageFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const productList = document.getElementById('productList');
+                    const productDiv = document.createElement('div');
+                    productDiv.className = 'product';
+                    productDiv.innerHTML = `${productName} - ${productPrice} 元<br><img src="${e.target.result}" alt="${productName}" style="max-width: 100px; height: auto;">`;
+                    
+                    // 新增刪除按鈕
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerText = '刪除';
+                    deleteButton.onclick = function() {
+                        productList.removeChild(productDiv);
+                        removeProduct(productName);
+                    };
+                    productDiv.appendChild(deleteButton);
+
+                    productList.appendChild(productDiv);
+                    
+                    // 更新交易明細
+                    const transaction = document.getElementById('transaction');
+                    transaction.innerHTML += `<br>${productName} ${productPrice} 元<br><img src="${e.target.result}" alt="${productName}" style="max-width: 100px; height: auto;">`;
+
+                    // 儲存到本地存儲
+                    saveProduct(productName, productPrice, e.target.result);
+
+                    // 清空輸入框
+                    document.getElementById('productName').value = '';
+                    document.getElementById('productPrice').value = '';
+                    document.getElementById('productImage').value = '';
+                };
+                reader.readAsDataURL(productImageFile);
+            } else {
+                alert('請輸入商品名稱、價格並選擇圖片');
+            }
+        }
+
+        function saveProduct(name, price, image) {
+            let products = JSON.parse(localStorage.getItem('products')) || [];
+            products.push({name: name, price: price, image: image});
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function removeProduct(name) {
+            let products = JSON.parse(localStorage.getItem('products')) || [];
+            products = products.filter(product => product.name !== name);
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function loadProducts() {
+            const productList = document.getElementById('productList');
+            const transaction = document.getElementById('transaction');
+            let products = JSON.parse(localStorage.getItem('products')) || [];
+            products.forEach(product => {
+                const productDiv = document.createElement('div');
+                productDiv.className = 'product';
+                productDiv.innerHTML = `${product.name} - ${product.price} 元<br><img src="${product.image}" alt="${product.name}" style="max-width: 100px; height: auto;">`;
+                
+                // 新增刪除按鈕
+                const deleteButton = document.createElement('button');
+                deleteButton.innerText = '刪除';
+                deleteButton.onclick = function() {
+                    productList.removeChild(productDiv);
+                    removeProduct(product.name);
+                };
+                productDiv.appendChild(deleteButton);
+
+                productList.appendChild(productDiv);
+                transaction.innerHTML += `<br>${product.name} ${product.price} 元<br><img src="${product.image}" alt="${product.name}" style="max-width: 100px; height: auto;">`;
+            });
+        }
+    </script>
+</body>
+</html>
